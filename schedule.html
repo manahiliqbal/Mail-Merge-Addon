@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <style>
+    body {
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      max-width: 600px;
+      padding-top: 20px;
+      margin: auto;
+      padding: 20px;
+      color: #000;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding: 20px 20px;
+      border-radius: 8px 8px 0 0;
+      width: calc(100% + 40px);
+      margin-left: -20px;
+      margin-right: -20px;
+      margin-top: -20px;
+    }
+    .header h2 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      color: #0056b3;
+    }
+    .header img {
+      height: 40px;
+      margin-right: 10px;
+    }
+    .dark-mode-toggle {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      cursor: pointer;
+      font-size: 24px;
+    }
+    .how-to-use {
+      text-align: right;
+      display: block;
+      margin-top: -20px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .btn-primary, .btn-preview {
+      width: 100%;
+      background-color: #0056b3;
+      border-color: #007bff;
+      transition: background-color 0.3s ease;
+    }
+    .btn-primary:hover, .btn-preview:hover {
+        background-color: #007bff;
+        border-color: #0056b3;
+      }
+    .dark-mode {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      color: white;
+    }
+    .dark-mode .container {
+      background-color: rgba(0, 0, 0, 0.8);
+      box-shadow: 0 10px 20px rgba(45, 29, 29, 0.3), 0 0 15px rgba(22, 84, 150, 0.5);
+      color: white;
+    }
+    .dark-mode .btn-primary, .dark-mode .btn-preview {
+      background-color: #007bff;
+      border-color: #007bff;
+    }
+    .dark-mode .btn-primary:hover, .dark-mode .btn-preview:hover {
+      background-color: #d1d9e2;
+      border-color: #123050;
+    }
+    .dark-mode label,
+    .dark-mode select,
+    .dark-mode input {
+      color: white;
+    }
+    .help {
+      display: flex;
+      align-items: flex-end;
+      justify-content: end;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2><img src="data:image/png;base64,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" alt="Logo"> Mail Merge</h2>
+    </div>
+    <form id="scheduleEmailForm">
+      <div class="form-group">
+        <label for="scheduledDate">Scheduled Email Date:</label>
+        <input type="date" id="scheduledDate" name="scheduledDate" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="timezone">Select Time Zone:</label>
+        <select id="timezone" name="timezone" class="form-control">
+            <!-- Options will be populated dynamically -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="scheduledTime">Scheduled Email Time:</label>
+        <input type="time" id="scheduledTime" name="scheduledTime" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="emailInterval">Time interval between each email (in seconds):</label>
+        <input type="number" id="emailInterval" name="emailInterval" class="form-control" min="1">
+      </div>
+      <div class="buttons">
+        <button onclick="loadIndexPage()" class="btn btn-primary">Back</button>
+        <button type="button" class="btn btn-primary" onclick="submitForm()">Schedule Emails</button>
+      </div>
+    </form>
+  </div>
+  <script>
+    function loadIndexPage() {
+      google.script.run.withSuccessHandler(function(html) {
+        document.open();
+        document.write(html);
+        document.close();
+      }).include('index');
+    }
+
+    function submitForm() {
+      google.script.run.scheduleEmails(
+        document.getElementById('scheduledDate').value,
+        document.getElementById('scheduledTime').value,
+        document.getElementById('timezone').value,
+        document.getElementById('emailInterval').value
+      );
+      google.script.host.close();
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const darkModeToggle = document.querySelector('.dark-mode-toggle');
+      if (document.body.classList.contains('dark-mode')) {
+        darkModeToggle.textContent = '🌜';
+      } else {
+        darkModeToggle.textContent = '🌞';
+      }
+    }
+
+    const timezones = [
+        { value: 'Pacific/Midway', label: '(GMT-11:00) Midway Island' },
+        { value: 'Pacific/Honolulu', label: '(GMT-10:00) Hawaii' },
+        { value: 'America/Anchorage', label: '(GMT-09:00) Alaska' },
+        { value: 'America/Los_Angeles', label: '(GMT-08:00) Pacific Time (US & Canada)' },
+        { value: 'America/Denver', label: '(GMT-07:00) Mountain Time (US & Canada)' },
+        { value: 'America/Chicago', label: '(GMT-06:00) Central Time (US & Canada)' },
+        { value: 'America/New_York', label: '(GMT-05:00) Eastern Time (US & Canada)' },
+        { value: 'Atlantic/Azores', label: '(GMT-01:00) Azores' },
+        { value: 'Europe/London', label: '(GMT) London, Dublin, Edinburgh' },
+        { value: 'Europe/Berlin', label: '(GMT+01:00) Berlin, Stockholm, Rome' },
+        { value: 'Europe/Athens', label: '(GMT+02:00) Athens, Bucharest, Istanbul' },
+        { value: 'Asia/Dubai', label: '(GMT+04:00) Abu Dhabi, Muscat' },
+        { value: 'Asia/Kolkata', label: '(GMT+05:30) Mumbai, Kolkata, New Delhi' },
+        { value: 'Asia/Bangkok', label: '(GMT+07:00) Bangkok, Hanoi, Jakarta' },
+        { value: 'Asia/Shanghai', label: '(GMT+08:00) Beijing, Hong Kong' },
+        { value: 'Asia/Tokyo', label: '(GMT+09:00) Tokyo, Seoul, Osaka' },
+        { value: 'Australia/Sydney', label: '(GMT+10:00) Sydney, Melbourne, Brisbane' },
+        { value: 'Pacific/Auckland', label: '(GMT+12:00) Auckland, Wellington' }
+    ];
+
+    const timezoneSelect = document.getElementById('timezone');
+    timezones.forEach(tz => {
+        const option = document.createElement('option');
+        option.value = tz.value;
+        option.text = tz.label;
+        timezoneSelect.appendChild(option);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <style>
+    body {
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      max-width: 600px;
+      padding-top: 20px;
+      margin: auto;
+      box-shadow: 0 10px 20px rgba(45, 29, 29, 0.3), 0 0 15px rgba(22, 84, 150, 0.5);
+      padding: 20px;
+      color: #000;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding: 20px 20px;
+      border-radius: 8px 8px 0 0;
+      width: calc(100% + 40px);
+      margin-left: -20px;
+      margin-right: -20px;
+      margin-top: -20px;
+    }
+    .header h2 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      color: #0056b3;
+    }
+    .header img {
+      height: 40px;
+      margin-right: 10px;
+    }
+    .header .dark-mode-toggle {
+      cursor: pointer;
+      font-size: 24px;
+    }
+    .header .how-to-use {
+      margin-left: auto;
+      margin-right: 0;
+      font-size: 14px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .btn-primary {
+      width: 100%;
+      background-color: #0056b3;
+      border-color: #007bff;
+      color: white;
+    }
+    .btn-preview, .btn-save {
+      background-color: #0056b3;
+      border-color: #007bff;
+      margin-bottom: 20px;
+      color: white;
+    }
+    .btn-primary:hover, .btn-preview:hover, .btn-save:hover {
+      background-color: #007bff;
+      border-color: #0056b3;
+    }
+    .dark-mode {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      color: white;
+    }
+    .dark-mode .container {
+      background-color: rgba(0, 0, 0, 0.8);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 123, 255, 0.5);
+      color: white;
+    }
+    .dark-mode .btn-primary,
+    .dark-mode .btn-preview,
+    .dark-mode .btn-save {
+      background-color: #31a2ff;
+      border-color: #007bff;
+    }
+    .dark-mode label,
+    .dark-mode select,
+    .dark-mode input,
+    .dark-mode option {
+      color: white;
+    }
+    input[type="file"] {
+      padding: 3px;
+    }
+    .help {
+      display: flex;
+      align-items: flex-end;
+      justify-content: end;
+      margin-bottom: 10px;
+      color: #0056b3;
+    }
+    .ql-editor {
+      min-height: 150px;
+    }
+    .note {
+      color: gray;
+      font-size: 0.9em;
+      margin-top: -10px;
+      margin-bottom: 10px;
+    }
+    .button-container {
+      display: flex;
+      gap: 10px;
+    }
+    .button-container .btn-preview, .button-container .btn-save {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFgAAABXCAYAAACAw4LhAAAACXBIWXMAAA7EAAAOxAGVKw4bAAATtUlEQVR4Xu1cB1hU17aegZmhd6V3UEHUXBI1oNjFEiVisESjRlSM3ah5yU31JcanieY9jQV7rKA3GlDsLRZExYINlCIdQXpngCnv3zOMGYZz4AzMjH7JnC9+Rthn7b3+vfbaa6/178NiaR8tAloEtAhoEdAioEVAi4AWAS0CWgS0CPxTEYi9lt8/LbXC5Z+qv9r0fvSguOfny+L2Bw48UfvhB+cfHz6Y+rHaOlODYLYaZKpEZFFhrd7hQ2mfRhxMWyMUiNh6erosoVDMqqsVsN7ytbq2eFnPFe/0sb6rks7UKOSNA/hlQa3h7VsvR/4n8vnnqcnlfhyODouFUYpFYhabzcYfFquxQcQyNuWWjxzltH3M+64HfHpaJqoRow6JfqMAvnAuZ2RMdGbYwwclQfV8IU9Xl354YrGYhf9YDo5G2cNHOv46YpRTpLuH2YsOoaGGl98IgJ8mlXU7uDd5xe1bhR/X1jTyiKUyfQjIOjByFxeTxx9Mcl8dMsnjCNN3NdGOuSZqGs32LU8WRuxPXV9bJ9AnflbU5ArkuyPWKgNd/v9JG/JvHR225L0GuI6+ftZRS5b1+sKru0WqmoaslNjXAnBRYR33VlzBmKNHni9OfFw2lAdgiRUSa2z5iAEeiw93UYO/Ofi9IQycSzUBxPDr64UsIyNuTVCw6y/vjXWJ9PaxeKYUIipurHGAL1/MHX4qJmtmwr3i92prBBa0fhYjEwnFYlhmo4en2a3BQ+1/z86q6nLjesEkvGfN4ZIpoX6IVZOd0dnFuAC++ZdRY5wP2DsYvVQxdozEaQzgkhI+O/zXJxsuXcidAyszwJInsYEECNkjW/5SSxSxzC14ZeND3FaP+8Btj4OjcRlp9+el3KH7did/nfikbCiXS6IKtsRNyPvtv/4tdR+drQ1qP//Kd5RfP9vrjFBRYSNaK1BhHxJRJcV8F2xis+Aq9aXgkqc5uAQMPI2NApG4X4DN4U3hAX4LlvT8RQYu+eWQYY6X90YMG7Zwqc9cU1NemVAoAojN1fgLbLYEYIR7ho8elvRXtU5M5BGfppEHiopgcdUiochYsUPpkmbVwF2I3D1N7wWHuP86brxb1Mat9EObOdt7Z1Ji6XX48Tlx1wumV1Y2WMtay1sz/LbEurkcnUaNKKrQicYAhjvQBY6U/QH8MmcXk6T3gpz3DB7qcNzRybiECRjdfSzJBvZZ7LUX0adOZH1053bh1Lo6oSnNu0ImMlXdRoMASw5hLR5sYmLPLmaPv/2h94yu3cyz2qNgwED72PIyftzRI+mp+39LXg+ZbIqI5LUArDEfTBwuHIGuIoAEDAtLXmF7wZXJM7fQFzk5G6cQN0NzToGz0PyjSYCJdpSRLvxkC+DbAwUmS4dqEptk/e0BJuCqV0lEbK1MTGu/a898MnpHkxbcGsCaUF4TfbQAXZMAM5rxv1sjTQKsfhchf3J5Q2ZKkwDTbnJvCBZqGYYmASYWTOcHNZYTUQuKrQjVJMCt6aYagJHbaaUT1fSh5AxpEmBK623K4RopOW7K5hWVDbY0SWXS/m8PMKWSuro6rPS0Sr/vvry9Nf72y97tAbrwZa3p3l1PP40+mvF1o4Ak6CnnUpPG9EoNTeYiKE2IZNL4fKEJ8sSzbt98OXndmoTw6TO7rrO1M6pgAvbZ09ljly268UNmZpUv8fCKuWEmMtTZRnOziiIwEBYqpnzkEuZ6NahwRB5I/Xpu6NWkE1EZH7SmeEpyuce/V9zc892X8THpzyt9kXqnB1eanPh7HzQMjTjVtnaGT8BvqMYSbpbZkoIsqcmx0Y6Fmp39uv9JOLh8cWzEjev5zRLlqSnlruGbnyxfsSTu6uWLeaFcro4kqU5luUSmCIkOMzMeq7ONQbY6LZVOtkYdfxrAuXwpb+yZk9mzX+TVeHE4bD2SDqceHOpxmAZTM16JXz+bI0MDHY5lZ1V7nj2VHZaRXtlHWq6nfpVIFAhELH19jghV5sNI3m/rP9BO4+Wi17azwgrdjhxKm3/2THYYWDrGXJ4uhzB3Wj7SnxEweTzdKpSHeDBITApFy6byPbFkJN1ZXt7mTz+e7fUFAD5lgVTm67De1wawTFmy/LdvSfwxNbmij44um+wHBnQFTFlZX+pKKIucpALNNjHhVQZPcF07ZVqXnwHsa0myy0+mWl1EWSmfl/iktLeVlX6xt49lCpUVVVU2sE+eyJp+7kz2xwjXejQ2ioyw9JWIi4GriCW2RB/9+ttEBk9w2+bTwyqZqi8SziU/K38bJfx0UAE04pPVBjCIJX1OHs+cGX+rcBqUTx8+wnEnam6H7R2MS6mUT39e4Xj5Ql4wwJ4L/+wB/0woVJzWwi742Uawger7Bdj+J2i86+7+AXZxdK7gCsr9kD3n8cOSiSjjp4x532X90OGOR21sDavU6T5UDnBRUZ3xbzufrbh0PndWdXWjGfZ3E6zqWmxmQhBBnk6b0XX1mHGuJ+mUysuttjqwN3n56ZjsT8GfMORydSUuoany3BQxsEQNDUKd7j0sroXO8V6JQukVOnnw9+4Yzxc3bxRMAtfCBBsgqZ6IsUqE3bzMb8wI7frdwCEO19QFssoArqioZ188lxuyZ8fTtQUFta7YwQUYtJ60+CglgIDfW45DhfnAwXYHQ8O8fvqXb+cndIqBwtoHsv4bfIZAHWkdnkNCXaFAzDYz5xVPmOyxKmSi+2asDsoNDDRYk9MxWdMiDqauKi3hWxkacoSy0pSMzyZoFLHYGBdW15bQOV5r3T3NclUNdIcBLivjs1EuH3YiKnP2/btFYwl/DMtbX7GqK8fa4cPP8gFMWeAox50jRzsf8+lB7Z/BBuJevpA7AdZMQjM/E1Nucf8BtocQdu2CT39OBUZBQY3p3fiiwVG/py9MSizzJ5QITC7teMjsY6Ww7ewNc8YEufzvsEDHY126meeoCugOAXwjNr9vTFTmTAAbUlXVaImdHsuPGfcUgFdDCZG9vVEW+L17Ro91jnRxNaXkj2VmVNo8TCj2h+/M7xdgd5tO+YvncwLBL579IKFkBPjFJqgwE3fASEeSv+AgL+LqbpIwcrTTlhGjnSKsbQzrOgo0o84VO8nNqbLetyd5yaXzeZ/w+QJjrGDEpmLIailOdsqiZk5K1K8mh1iU3J9Pme75/bjx7lHKKkU2yF3bkr65eeNlMHyzPoSaQAZlGkBGdaXns2HWMVhEGfdnzu72xfARTheVHU+HwrSjR9JC9u9JXpP/otZDT1+3AWPB8mselzaR+oj3rSCxKUEevg6Ki3mKkyDzh/DPjYgKdHEwiA6b133lv96m988yBQryawyOR2XOQv7iJ2yoRvr6uuBjShhElGRA/LgBBxoJbwJGgbFQTwJx+YTzRv4aMtxhz6ww7+8BeF57gGZkwcgN6N2JLxx8/FjGXND73yM0KNyd4CqSpeXA4vN4OnVduprFjx3nuiMnu9qDZMsKX9Y5QDXC76XgQZD5YIthgWxzC73iwJGO27BMI7ERJikqVpBfa3wzrmA4xvMJ2PEDYZV6xB20XCUSmZLLMwYGurVv+XY6hQ322NPEsj6x1wtmVJTVW2LiCTO52eqTNxjsF2Bn6hfBhW2ENR/28rag9P104DMCeO2P91dfOJuzGLxcg6YTV4vlJyGjillCHH3Fbh6mj4KCXTYPGmIf4+RsUkw6vxtf6Ate8DSEb/PgH7lcng5Xds9C8cpAk4LiTp31iz7/0nc88gjN4ttli2MPg1/8PrnHAXBbTJbcROMQItYBa+je+AluP/sH2J6yszOqIePBvbt+iNPDEL5N5NcLjUAOpM3VE0MirsXdwzTz0896TcDtpntMrbnNfDBOPxykBQfW1DSakBs/8lYiz+eF5YmR2dKZMMVj9ZSPPDcB2EL5QfTua52AfycA6IhtWxLXPkooHs7h6iIehdkqpCGabhOxkdyxzsio9MJ7rwDOf1FjNm3SxYkN9SI2lKY0EB1sVg1gupub8xomfujx75DJHpssLZuHcwHSSYvDCfLYzvCkTUh5uhoYIBKERMWVKesmJ6falYSgeI8xwEzywSQykEazckDILaNqAFLW512bqE3bB7wNi/tWEVwFoO/t2jckcNGynmGw0AKw2Em+gDZXC9nNfgcABPjTIF3Wio/kQCLA4Vk4aIjd3o3hAT3C5vtsVARX/i2EiSePnhjlNnuu91emptxKGbiyg42krVxPZKEytV7Srk0LlooXUwTzbDH810v42Ydjx7nsHjrMIdrCUp8xB3dGqNeu5Gdlf574IzP02pUXM0pL+Q4kIdbMXVDXoSVz2wJa/BCbbnX37hZXxga7ho8e43J63QbmUCxc2nPNg/tFZ0k8j2sKU6uqGiykNQK5rppy1sylMgSY5K0VhWKXbXR1M01buar3dPxdpEynsrbdvCQbxjdnTmbdQanoEJ8vokryKFoMJexkdfXpax29cGmPxYiny9szHkQuxI0t2r41MWf39qS1SKNS2atSqU8mLoLMIjn2vnqa/JQukuHF7QVXXp6zq3EiLrW05ikY4WXVST+vveDKd+DkZJQiCfUY9dp6I0YA04iQRJMqGEOTCHJYoXwULZj0qZQfVHaMxBMo+w5d+w4BrKzDb2XQyipE115ZOZRDakMvpYyKKcBUQpXqSFUW0YYclQCsyrEyBViVfVLJoo4XpC2pQFOrBavSBXUUYFVZMQGMbndWBmB1GwLdhNP2yxRgOiBVCTDTAmVr1q4qgFWlV6tsxDYHi0BcJZdX0BFRiApgOjDpXIRKgGkjQlPKz3fIglUXpOFUSO0ilFIGMpjq06rxkFupqop4GA1IcUaJ1jgmi6qrBBa4g8zkuN2qQqXFfHvkgpn6WlrQQV+1QjLIoM2l10YDpGeRVlXNwxAchcQKVOTostmok/X46r9uHUcaMtzP3/qMVScDpn5UMnoQ+FyQJ35//U8P5qAYakTxpRNiAIrLnvybIl3KZuHOchC/Tqh3/eqLHQMG2ccqCxFK+r2QXZt0aF9qGDKDApqrv0qtKiYAi6SfImrxkDSjMaq+o5DqG/B2785/3LyRv82/v92tthQDIUUPHIWPfvj2zicZ6VV9yXVaytQjybTgwjyFPI7ClxAkI0Tx0iYutmAKgApa+VV8JHLA4cgvPG5rPKhAm0cfy5iz6ru7YeBkdCUlI8pHenZVKhfRJsCS+AllmKa0IUCVff1JgrkkVVpbKzBBRmxqXGz+5B9X3t08a67XahBMyqkGCQ6w/7LFN9akPC0fxG766BFkNJtAacIciWKgiGpEs6+boGqNSgo+iSAh/kmc1atupCtAzMF4zM+fzZmLZPq4Lb8+3rBwSc91dCCfjskcP3/O1f/Ly61xkXzhimTQFOxJNh4iA30zcquy/tpsbGNjWA/CyGOU4knCp1Gxcxm/FxaICgVLP/pY+mcLwq4l/H44bWphYe2rKONpYmm377+J37R43rU4lGwGoTIiSTBT1fOITJKXRfqT7+RslCYPDmhPlR6eJmSVICfccjOSvUsqHajT2e/Z8ezniePOPTp9MjNYXk7ik5LuXyyP279q5b0/UF90IQQX6dNysUp1FLEsLfTKOlnrK8WdYBTWFBfX6V+5lBdy6kT2fDBlesOqSDWBFA1bPGTyQQ4RYUKqe/laXR4/wT08K7OqKz43sABW4k34vFQEPiKI/JzUz1CJqPPrbxMRNM51Kyoh9xU7QZXFDBTYqShjzULFoxexarrqBhkPqauhIFru39/2+OBhDkeTk8p8z+FdbNCuUqulfmQlLUsrvaoBA+124httu3q+ZfWU9gUqPJRpDH6C49U/X4xBsXEpwHIGWFxgQgk0VhphOwpAqC6FgsZNpL4W3cksmABLGJTw5TEo86wfxIDORMjY507nTIyJzlhSWlrvAIqrxGBoqtxkAutR/CzFhmqBNuTLK5TqkzIoYf1AHgulpR3BIW7b+/rZtJhoJtgxsmBFQeAhOB/4LWX56ZNZSyFAgNoah1AcqX2XlL1O95BiIrgVLPLRItCXFuFrJ0eZDFy+TQZ4EVs2Ja6+fuXFdFSX2eRDS2TCqABsKs5SUmBlhO6aagF4EabPP1nkMz9wpNMFZccj375dAMsEYGMbAALKt6nPygOEqN7i5+CiUSvWfJDSzYm0RaGxMXCU04ap07usxVdPKJmXTBU8dSIzCFy0LzPTK/2lvrT5Jkgl56/xSttaWOpVjx7jvAolpJ+Z9ttauw4BTASDWMc5dybno3Ons8NSUyregVsg/rCVI7QkMiBXA/h937WOANNyu38/23hVKENkgHVkdeFs7mREEQtQlfZpa8Jlfh9+thF+ditorTvBn1DZtzA7DLAMGMTCTpcu5ARHHc1YgZOQC/Ff8v5Qcm8CwOJLqizwCi6BGbkOlntOVcAqysEHk7qdP5MzFZthGPyznZ5ec8qB9B4H+GgcNutdf5to+P01+OyXyiZaNh6VASwTCH6vZfjmxNUgmMzGz7hEAWIl2FhYnTvr18ya6z1v4oeeB9UFrKLcJ49KfLZseLw+Pr5oFNhGLOKfCbjkHoerq0le2ILu80jpXl3jUTnAsoGC6Tji0L6U7+E2/PCpw3LwFHZPC+22xtnZhNEXpVStMLl3dyQi7Rt8PdAXXOGK0WNdNk6a4rkem6taGe6q1qOZPJDzLCMPpoRidx+o1o4YCkfuxCnyYOrse3cK32H4iraZFgEtAloEtAhoEdAioEVAi4AWAS0CWgS0CPzjEPh/aQ2j3KMMZKQAAAAASUVORK5CYII=" alt="Logo"> Mail Merge</h2>
+      <span class="dark-mode-toggle" onclick="toggleDarkMode()">🌞</span>
+    </div>
+    <div class="help"><span class="how-to-use"><a href="#" onclick="loadHowToUse()">How to Use Mail Merge</a></span></div>
+    
+    <form id="mailMergeForm">
+      <div class="form-group">
+        <label for="senderName">Sender's Name:</label>
+        <input type="text" id="senderName" name="senderName" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="senderEmail">Sender's Email:</label>
+        <input type="email" id="senderEmail" name="senderEmail" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="templateOption">Choose Email Template:</label>
+        <select id="templateOption" name="templateOption" class="form-control" onchange="toggleTemplateOption(this.value)">
+          <option value="">Select an option</option>
+          <option value="prebuilt">Select a Pre-built Template</option>
+          <option value="local">Upload a Template from Local Storage</option>
+          <option value="write">Write an Email</option>
+        </select>
+      </div>
+      <div class="form-group" id="prebuiltTemplateSelect" style="display: none;">
+        <label for="templateDocument">Select Template Document:</label>
+        <select id="templateDocument" name="templateDocument" class="form-control"></select>
+      </div>
+      <div class="form-group" id="localFileInput" style="display: none;">
+        <label for="localTemplateFile">Upload Template File:</label>
+        <input type="file" id="localTemplateFile" name="localTemplateFile" class="form-control">
+      </div>
+      <div class="form-group" id="writeEmailInput" style="display: none;">
+        <label for="emailSubject">Email Subject:</label>
+        <input type="text" id="emailSubject" name="emailSubject" class="form-control">
+        <label for="emailContent">Write Your Email:</label>
+        <div class="note">(use {{FirstName}} and {{LastName}} for personalization)</div>
+        <div id="editorContainer" style="height: 200px; background-color: white;"></div>
+        <button type="button" class="btn btn-save" onclick="saveEmailContent(quill.root.innerHTML)">Save Email</button>
+      </div>
+      <div class="form-group">
+        <label for="sheetSelect">Select Sheet:</label>
+        <select id="sheetSelect" name="sheetSelect" class="form-control"></select>
+      </div>
+      <div class="form-group">
+        <label for="attachmentFile">If you wish to include an attachment file in your email, please upload the file:</label>
+        <input type="file" id="attachmentFile" name="attachmentFile" class="form-control">
+      </div>
+      <div class="form-group button-container">
+        <button type="button" class="btn btn-preview" onclick="previewEmail()">Preview Email</button>
+        <a href="#" onclick="loadSchedulePage()" class="btn btn-preview">Schedule Email</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="previewModalLabel">Email Preview</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p id="previewContent"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+  <script>
+    var quill;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      quill = new Quill('#editorContainer', {
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            [{ 'font': [] }, { 'size': [] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'script': 'sub' }, { 'script': 'super' }],
+            [{ 'header': '1' }, { 'header': '2' }, 'blockquote', 'code-block'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+            ['direction', { 'align': [] }],
+            ['link', 'image', 'video'],
+            ['clean']
+          ]
+        }
+      });
+      populateTemplates(); // Simulating the template population
+      populateSheets(); // Simulating the sheet population
+      loadEmailContent();
+    });
+
+    function populateTemplates() {
+      const templates = [
+        { id: 'template1', name: 'Template 1' },
+        { id: 'template2', name: 'Template 2' }
+      ];
+      const templateSelect = document.getElementById('templateDocument');
+      templates.forEach(template => {
+        const option = document.createElement('option');
+        option.value = template.id;
+        option.textContent = template.name;
+        templateSelect.appendChild(option);
+      });
+    }
+
+    function populateSheets() {
+      const sheets = [
+        { name: 'Sheet1' },
+        { name: 'Sheet2' }
+      ];
+      const sheetSelect = document.getElementById('sheetSelect');
+      sheets.forEach(sheet => {
+        const option = document.createElement('option');
+        option.value = sheet.name;
+        option.textContent = sheet.name;
+        sheetSelect.appendChild(option);
+      });
+    }
+
+    function toggleTemplateOption(value) {
+      const prebuiltTemplateSelect = document.getElementById('prebuiltTemplateSelect');
+      const localFileInput = document.getElementById('localFileInput');
+      const writeEmailInput = document.getElementById('writeEmailInput');
+      const saveButton = document.querySelector('.btn-save');
+      if (value === 'prebuilt') {
+        prebuiltTemplateSelect.style.display = 'block';
+        localFileInput.style.display = 'none';
+        writeEmailInput.style.display = 'none';
+      } else if (value === 'local') {
+        prebuiltTemplateSelect.style.display = 'none';
+        localFileInput.style.display = 'block';
+        writeEmailInput.style.display = 'none';
+      } else if (value === 'write') {
+        prebuiltTemplateSelect.style.display = 'none';
+        localFileInput.style.display = 'none';
+        writeEmailInput.style.display = 'block';
+        saveButton.style.display = 'block';
+      } else {
+        prebuiltTemplateSelect.style.display = 'none';
+        localFileInput.style.display = 'none';
+        writeEmailInput.style.display = 'none';
+        saveButton.style.display = 'none';
+      }
+    }
+
+    function previewEmail() {
+      const selectedOption = document.getElementById('templateOption').value;
+      let templateContent;
+      if (selectedOption === 'local') {
+        templateContent = document.getElementById('localTemplateFile').files[0]?.name || 'Local template content';
+      } else if (selectedOption === 'write') {
+        templateContent = quill.root.innerHTML;
+      } else if (selectedOption === 'prebuilt') {
+        const selectedTemplate = document.getElementById('templateDocument').value;
+        templateContent = 'Selected pre-built template content: ' + selectedTemplate;
+      } else {
+        templateContent = 'Selected template content';
+      }
+
+      const previewContent = `
+        <strong>From:</strong> ${document.getElementById('senderName').value || 'Your Name'} &lt;${document.getElementById('senderEmail').value || 'your.email@example.com'}&gt;<br>
+        <strong>Subject:</strong> ${document.getElementById('emailSubject').value || 'No Subject'}<br><br>
+        Dear John Doe,<br><br>
+        ${templateContent}<br><br>
+        Sincerely,<br>Your Company
+      `;
+      document.getElementById('previewContent').innerHTML = previewContent;
+      $('#previewModal').modal('show');
+    }
+
+    function saveEmailContent(content) {
+      localStorage.setItem('emailContent', content);
+      alert('Email content saved!');
+    }
+
+    function loadEmailContent() {
+      const savedContent = localStorage.getItem('emailContent');
+      if (savedContent) {
+        quill.root.innerHTML = savedContent;
+      }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const darkModeToggle = document.querySelector('.dark-mode-toggle');
+      if (document.body.classList.contains('dark-mode')) {
+        darkModeToggle.textContent = '🌜';
+      } else {
+        darkModeToggle.textContent = '🌞';
+      }
+    }
+
+    function loadHowToUse() {
+      google.script.run.withSuccessHandler(function(html) {
+        document.open();
+        document.write(html);
+        document.close();
+      }).include('how_to_use');
+    }
+
+    function loadSchedulePage() {
+      google.script.run.withSuccessHandler(function(html) {
+        document.open();
+        document.write(html);
+        document.close();
+      }).include('schedule');
+    }
+  </script>
+</body>
+</html>
