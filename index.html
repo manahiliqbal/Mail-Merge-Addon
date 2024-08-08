@@ -143,7 +143,7 @@
         <select id="templateOption" name="templateOption" class="form-control" onchange="toggleTemplateOption(this.value)">
           <option value="">Select an option</option>
           <option value="prebuilt">Select a Pre-built Template</option>
-          <option value="local">Upload a Template from Local Storage</option>
+          <option value="local">Upload a Template from Drive</option>
           <option value="write">Write an Email</option>
         </select>
       </div>
@@ -169,8 +169,9 @@
       </div>
       <div class="form-group">
         <label for="attachmentFile">If you wish to include an attachment file in your email, please upload the file:</label>
-        <input type="file" id="attachmentFile" name="attachmentFile" class="form-control">
+       <input type="file" id="attachmentFile" name="attachmentFile" class="form-control" accept="image/*">
       </div>
+
       <div class="form-group button-container">
         <button type="button" class="btn btn-preview" onclick="previewEmail()">Preview Email</button>
          <a href="#" onclick="loadSchedulePage()" class="btn btn-preview">Schedule Email</a>
@@ -268,7 +269,63 @@
       }
     }
 
-    function previewEmail() {
+
+
+
+function validateAttachment() {
+  const attachmentFile = document.getElementById('attachmentFile').files[0];
+  if (attachmentFile && !attachmentFile.type.startsWith('image/')) {
+    alert('Only image files are allowed.');
+    document.getElementById('attachmentFile').value = ''; // Clear the input
+    return false;
+  }
+  return true;
+}
+
+function saveEmailContent() {
+  if (!validateAttachment()) {
+    return;
+  }
+
+  const emailContent = quill.root.innerHTML;
+  const emailSubject = document.getElementById('emailSubject').value;
+  const attachmentFile = document.getElementById('attachmentFile').files[0];
+
+  if (attachmentFile) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const attachmentData = e.target.result;
+      google.script.run.storeRuntimeEmailContentWithAttachment(emailSubject, emailContent, attachmentData, attachmentFile.name);
+      alert('Email content and attachment saved!');
+    };
+    reader.readAsDataURL(attachmentFile);
+  } else {
+    google.script.run.storeRuntimeEmailContent(emailSubject, emailContent);
+    alert('Email content saved!');
+  }
+}
+
+function loadEmailContent() {
+  google.script.run.withSuccessHandler(function(content) {
+    console.log('Loaded email content:', content);
+    if (content) {
+      quill.root.innerHTML = content.emailContent;
+      document.getElementById('emailSubject').value = content.emailSubject;
+      if (content.attachment) {
+        const attachmentPreview = document.createElement('img');
+        attachmentPreview.src = content.attachment.data;
+        attachmentPreview.alt = content.attachment.name;
+        document.getElementById('previewContent').appendChild(attachmentPreview);
+      }
+    }
+  }).getRuntimeEmailContent();
+}
+
+function previewEmail() {
+  if (!validateAttachment()) {
+    return;
+  }
+
   const selectedOption = document.getElementById('templateOption').value;
   let templateContent = '';
   let emailSubject = '';
@@ -295,15 +352,31 @@
 function showPreview(templateContent, emailSubject) {
   const senderName = document.getElementById('senderName').value || 'Your Name';
   const senderEmail = document.getElementById('senderEmail').value || 'your.email@example.com';
-  const previewContent = `
+  const attachmentFile = document.getElementById('attachmentFile').files[0];
+
+  let previewContent = `
     <strong>From:</strong> ${senderName} &lt;${senderEmail}&gt;<br>
     <strong>Subject:</strong> ${emailSubject}<br><br>
-    ${templateContent}
+    ${templateContent}<br><br>
   `;
+
+  if (attachmentFile) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const attachmentData = e.target.result;
+      previewContent += `<br><br><img src="${attachmentData}" alt="${attachmentFile.name}" style="max-width: 100%;">`;
+      document.getElementById('previewContent').innerHTML = previewContent;
+      $('#previewModal').modal('show');
+    };
+    reader.readAsDataURL(attachmentFile);
+  } else {
+    document.getElementById('previewContent').innerHTML = previewContent;
+    $('#previewModal').modal('show');
+  }
+
   console.log('Preview content:', previewContent);
-  document.getElementById('previewContent').innerHTML = previewContent;
-  $('#previewModal').modal('show');
 }
+
 
     function saveEmailContent() {
       const emailContent = quill.root.innerHTML;
