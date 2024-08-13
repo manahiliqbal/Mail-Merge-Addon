@@ -27,9 +27,12 @@ function isValidEmail(email) {
 }
 
 // Function to schedule emails based on the sheet data and user input
-function scheduleEmails(scheduledDate, scheduledTime, timezone, emailInterval) {
+function scheduleEmails(scheduledDate, scheduledTime, timezone, emailInterval, templateId) {
   const sheetData = getSheetData();  // Get data from the sheet
 
+  // Store the selected template content or runtime content
+  storeRuntimeEmailContent(null, null, templateId); // Null for emailSubject and emailContent if using template
+  
   // Calculate the initial time to send the first email
   const startTime = new Date(`${scheduledDate} ${scheduledTime}`);
 
@@ -173,27 +176,6 @@ function storeRuntimeEmailContent(emailSubject, emailContent, templateId) {
   storeEmailContent(emailSubject, emailContent, templateId);
 }
 
-// When the user selects a template, call storeRuntimeEmailContent with the templateId
-function scheduleEmails(scheduledDate, scheduledTime, timezone, emailInterval, templateId) {
-  const sheetData = getSheetData();  // Get data from the sheet
-
-  // Store the selected template content or runtime content
-  storeRuntimeEmailContent(null, null, templateId); // Null for emailSubject and emailContent if using template
-  
-  // Calculate the initial time to send the first email
-  const startTime = new Date(`${scheduledDate} ${scheduledTime}`);
-
-  // Store the time and interval in user properties for the trigger to use
-  storeEmailSchedule(startTime, emailInterval);
-
-  // Create a single trigger to run the 'sendEmailsInBatch' function at the specified time
-  ScriptApp.newTrigger('sendEmailsInBatch')
-    .timeBased()
-    .at(startTime)
-    .create();
-}
-
-
 function getRuntimeEmailContent() {
   var userProperties = PropertiesService.getUserProperties();
   var emailSubject = userProperties.getProperty('emailSubject');
@@ -202,6 +184,34 @@ function getRuntimeEmailContent() {
   return { emailSubject: emailSubject, emailContent: emailContent };
 }
 
+// Function to list files in Google Drive
+function listDriveFiles() {
+  var files = [];
+  var folder = DriveApp.getRootFolder();  // You can change this to any specific folder if needed
+  var fileIterator = folder.getFilesByType(MimeType.GOOGLE_DOCS); // Filter only Google Docs files
+
+  while (fileIterator.hasNext()) {
+      var file = fileIterator.next();
+      files.push({ id: file.getId(), name: file.getName() });
+  }
+
+  return files;
+}
+
+// Function to get content from a selected Google Drive file
+function getDriveFileContent(fileId) {
+  try {
+      var file = DriveApp.getFileById(fileId);
+      var doc = DocumentApp.openById(fileId);
+      var body = doc.getBody().getText();
+      return body;
+  } catch (error) {
+      Logger.log('Error fetching file: ' + error.toString());
+      return null;
+  }
+}
+
+// Include HTML file for the UI
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
@@ -209,4 +219,3 @@ function include(filename) {
 function getUserEmail() {
   return Session.getActiveUser().getEmail();
 }
-

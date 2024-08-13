@@ -134,16 +134,12 @@
         <label for="senderName">Sender's Name:</label>
         <input type="text" id="senderName" name="senderName" class="form-control">
       </div>
-      <!-- <div class="form-group">
-        <label for="senderEmail">Sender's Email:</label>
-        <input type="email" id="senderEmail" name="senderEmail" class="form-control">
-      </div> -->
       <div class="form-group">
         <label for="templateOption">Choose Email Template:</label>
         <select id="templateOption" name="templateOption" class="form-control" onchange="toggleTemplateOption(this.value)">
           <option value="">Select an option</option>
           <option value="prebuilt">Select a Pre-built Template</option>
-          <option value="local">Upload a Template from Drive</option>
+          <option value="drive">Select a Google Drive File</option>
           <option value="write">Write an Email</option>
         </select>
       </div>
@@ -151,9 +147,12 @@
         <label for="templateDocument">Select Template Document:</label>
         <select id="templateDocument" name="templateDocument" class="form-control"></select>
       </div>
-      <div class="form-group" id="localFileInput" style="display: none;">
-        <label for="localTemplateFile">Upload Template File:</label>
-        <input type="file" id="localTemplateFile" name="localTemplateFile" class="form-control">
+      <div class="form-group" id="driveFileInput" style="display: none;">
+        <label for="driveFileSelect">Select a Google Drive File:</label>
+        <select id="driveFileSelect" name="driveFileSelect" class="form-control">
+            <!-- Options will be populated by the script -->
+        </select>
+        <button type="button" class="btn btn-save" onclick="fetchSelectedDriveFile()">Fetch and Use Template</button>
       </div>
       <div class="form-group" id="writeEmailInput" style="display: none;">
         <label for="emailSubject">Email Subject:</label>
@@ -169,7 +168,7 @@
       </div>
       <div class="form-group">
         <label for="attachmentFile">If you wish to include an attachment file in your email, please upload the file:</label>
-       <input type="file" id="attachmentFile" name="attachmentFile" class="form-control" accept="image/*">
+        <input type="file" id="attachmentFile" name="attachmentFile" class="form-control" accept="image/*">
       </div>
 
       <div class="form-group button-container">
@@ -199,14 +198,9 @@
   </div>
   
   <script>
-  let senderEmail;
-
     var quill;
 
     document.addEventListener('DOMContentLoaded', function() {
-      google.script.run.withSuccessHandler(function(email) {
-      senderEmail = email;
-      }).getUserEmail();
       quill = new Quill('#editorContainer', {
         theme: 'snow',
         modules: {
@@ -223,21 +217,47 @@
           ]
         }
       });
-      populateTemplates();
       populateSheets();
       loadEmailContent();
     });
 
-    function populateTemplates() {
-      google.script.run.withSuccessHandler(function(templates) {
-        const templateSelect = document.getElementById('templateDocument');
-        templates.forEach(template => {
-          const option = document.createElement('option');
-          option.value = template.id;
-          option.textContent = template.name;
-          templateSelect.appendChild(option);
-        });
-      }).getTemplateList();
+    function populateDriveFileList() {
+        google.script.run.withSuccessHandler(function(files) {
+            const fileSelect = document.getElementById('driveFileSelect');
+            fileSelect.innerHTML = ''; // Clear existing options
+
+            files.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file.id;
+                option.textContent = file.name;
+                fileSelect.appendChild(option);
+            });
+
+            if (files.length === 0) {
+                const option = document.createElement('option');
+                option.textContent = 'No Google Docs files found';
+                fileSelect.appendChild(option);
+            }
+        }).listDriveFiles();
+    }
+
+    function fetchSelectedDriveFile() {
+        const fileId = document.getElementById('driveFileSelect').value;
+
+        if (!fileId) {
+            alert('Please select a file.');
+            return;
+        }
+
+        google.script.run.withSuccessHandler(function(fileContent) {
+            if (fileContent) {
+                quill.root.innerHTML = fileContent;
+                alert('Template fetched successfully!');
+                google.script.run.storeRuntimeEmailContent('Fetched Template', fileContent);
+            } else {
+                alert('Failed to fetch the template.');
+            }
+        }).getDriveFileContent(fileId);
     }
 
     function populateSheets() {
@@ -253,150 +273,86 @@
     }
 
     function toggleTemplateOption(value) {
-      const prebuiltTemplateSelect = document.getElementById('prebuiltTemplateSelect');
-      const localFileInput = document.getElementById('localFileInput');
-      const writeEmailInput = document.getElementById('writeEmailInput');
-      const saveButton = document.querySelector('.btn-save');
-      if (value === 'prebuilt') {
-        prebuiltTemplateSelect.style.display = 'block';
-        localFileInput.style.display = 'none';
-        writeEmailInput.style.display = 'none';
-      } else if (value === 'write') {
-        prebuiltTemplateSelect.style.display = 'none';
-        localFileInput.style.display = 'none';
-        writeEmailInput.style.display = 'block';
-        saveButton.style.display = 'block';
-      } else {
-        prebuiltTemplateSelect.style.display = 'none';
-        localFileInput.style.display = 'none';
-        writeEmailInput.style.display = 'none';
-        saveButton.style.display = 'none';
-      }
+        const prebuiltTemplateSelect = document.getElementById('prebuiltTemplateSelect');
+        const driveFileInput = document.getElementById('driveFileInput');
+        const writeEmailInput = document.getElementById('writeEmailInput');
+        const saveButton = document.querySelector('.btn-save');
+      
+        if (value === 'prebuilt') {
+            prebuiltTemplateSelect.style.display = 'block';
+            driveFileInput.style.display = 'none';
+            writeEmailInput.style.display = 'none';
+        } else if (value === 'drive') {
+            prebuiltTemplateSelect.style.display = 'none';
+            driveFileInput.style.display = 'block';
+            writeEmailInput.style.display = 'none';
+            populateDriveFileList(); // Populate the dropdown with Drive files
+        } else if (value === 'write') {
+            prebuiltTemplateSelect.style.display = 'none';
+            driveFileInput.style.display = 'none';
+            writeEmailInput.style.display = 'block';
+            saveButton.style.display = 'block';
+        } else {
+            prebuiltTemplateSelect.style.display = 'none';
+            driveFileInput.style.display = 'none';
+            writeEmailInput.style.display = 'none';
+            saveButton.style.display = 'none';
+        }
     }
-
-
-
-
-function validateAttachment() {
-  const attachmentFile = document.getElementById('attachmentFile').files[0];
-  if (attachmentFile && !attachmentFile.type.startsWith('image/')) {
-    alert('Only image files are allowed.');
-    document.getElementById('attachmentFile').value = ''; // Clear the input
-    return false;
-  }
-  return true;
-}
-
-function saveEmailContent() {
-  if (!validateAttachment()) {
-    return;
-  }
-
-  const emailContent = quill.root.innerHTML;
-  //const emailSubject = document.getElementById('emailSubject').value;
-  const attachmentFile = document.getElementById('attachmentFile').files[0];
-
-  if (attachmentFile) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const attachmentData = e.target.result;
-      google.script.run.storeRuntimeEmailContentWithAttachment(emailSubject, emailContent, attachmentData, attachmentFile.name);
-      alert('Email content and attachment saved!');
-    };
-    reader.readAsDataURL(attachmentFile);
-  } else {
-    google.script.run.storeRuntimeEmailContent(emailSubject, emailContent);
-    alert('Email content saved!');
-  }
-}
-
-function loadEmailContent() {
-  google.script.run.withSuccessHandler(function(content) {
-    console.log('Loaded email content:', content);
-    if (content) {
-      quill.root.innerHTML = content.emailContent;
-      document.getElementById('emailSubject').value = content.emailSubject;
-      if (content.attachment) {
-        const attachmentPreview = document.createElement('img');
-        attachmentPreview.src = content.attachment.data;
-        attachmentPreview.alt = content.attachment.name;
-        document.getElementById('previewContent').appendChild(attachmentPreview);
-      }
-    }
-  }).getRuntimeEmailContent();
-}
-
-function previewEmail() {
-  if (!validateAttachment()) {
-    return;
-  }
-
-  const selectedOption = document.getElementById('templateOption').value;
-  let templateContent = '';
-  let emailSubject = '';
-
-  if (selectedOption === 'write') {
-    templateContent = quill.root.innerHTML;
-    emailSubject = document.getElementById('emailSubject').value || 'No Subject';
-    console.log('Template content from write:', templateContent);
-    showPreview(templateContent, emailSubject);
-  } else if (selectedOption === 'prebuilt') {
-    const selectedTemplate = document.getElementById('templateDocument').value;
-    console.log('Selected prebuilt template:', selectedTemplate);
-    google.script.run.withSuccessHandler(function(template) {
-      templateContent = template.content;
-      emailSubject = template.subject;
-      console.log('Template content from prebuilt:', templateContent);
-      showPreview(templateContent, emailSubject);
-    }).getTemplateContent(selectedTemplate);
-  } else {
-    showPreview('No template selected.', 'No Subject');
-  }
-}
-
-function showPreview(templateContent, emailSubject) {
-  const senderName = document.getElementById('senderName').value || 'Your Name';
-  const attachmentFile = document.getElementById('attachmentFile').files[0];
-
-  let previewContent = `
-    <strong>From:</strong> ${senderName} &lt;${senderEmail}&gt;<br>
-    <strong>Subject:</strong> ${emailSubject}<br><br>
-    ${templateContent}<br><br>
-  `;
-
-  if (attachmentFile) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const attachmentData = e.target.result;
-      previewContent += `<br><br><img src="${attachmentData}" alt="${attachmentFile.name}" style="max-width: 100%;">`;
-      document.getElementById('previewContent').innerHTML = previewContent;
-      $('#previewModal').modal('show');
-    };
-    reader.readAsDataURL(attachmentFile);
-  } else {
-    document.getElementById('previewContent').innerHTML = previewContent;
-    $('#previewModal').modal('show');
-  }
-
-  console.log('Preview content:', previewContent);
-}
-
 
     function saveEmailContent() {
       const emailContent = quill.root.innerHTML;
-      console.log('Saving email content:', emailContent);
       google.script.run.storeRuntimeEmailContent(document.getElementById('emailSubject').value, emailContent);
       alert('Email content saved!');
     }
 
     function loadEmailContent() {
       google.script.run.withSuccessHandler(function(content) {
-        console.log('Loaded email content:', content);
         if (content) {
           quill.root.innerHTML = content.emailContent;
           document.getElementById('emailSubject').value = content.emailSubject;
         }
       }).getRuntimeEmailContent();
+    }
+
+    function previewEmail() {
+      const selectedOption = document.getElementById('templateOption').value;
+      let templateContent = '';
+      let emailSubject = '';
+
+      if (selectedOption === 'write') {
+        templateContent = quill.root.innerHTML;
+        emailSubject = document.getElementById('emailSubject').value || 'No Subject';
+      } else if (selectedOption === 'prebuilt') {
+        const selectedTemplate = document.getElementById('templateDocument').value;
+        google.script.run.withSuccessHandler(function(template) {
+          templateContent = template.content;
+          emailSubject = template.subject;
+          showPreview(templateContent, emailSubject);
+        }).getTemplateContent(selectedTemplate);
+        return; // Early return because getTemplateContent is async
+      } else if (selectedOption === 'drive') {
+        google.script.run.withSuccessHandler(function(content) {
+          templateContent = content.emailContent;
+          emailSubject = content.emailSubject || 'No Subject';
+          showPreview(templateContent, emailSubject);
+        }).getRuntimeEmailContent();
+        return; // Early return because getRuntimeEmailContent is async
+      }
+
+      showPreview(templateContent, emailSubject);
+    }
+
+    function showPreview(templateContent, emailSubject) {
+      const senderName = document.getElementById('senderName').value || 'Your Name';
+      const previewContent = `
+        <strong>From:</strong> ${senderName} &lt;your_email@example.com&gt;<br>
+        <strong>Subject:</strong> ${emailSubject}<br><br>
+        ${templateContent}<br><br>
+      `;
+
+      document.getElementById('previewContent').innerHTML = previewContent;
+      $('#previewModal').modal('show');
     }
 
     function toggleDarkMode() {
@@ -416,7 +372,8 @@ function showPreview(templateContent, emailSubject) {
         document.close();
       }).include('how_to_use');
     }
-     function loadSchedulePage() {
+
+    function loadSchedulePage() {
       google.script.run.withSuccessHandler(function(html) {
         document.open();
         document.write(html);
