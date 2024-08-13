@@ -260,6 +260,20 @@
         }).getDriveFileContent(fileId);
     }
 
+    function populatePrebuiltTemplates() {
+        google.script.run.withSuccessHandler(function(templates) {
+            const templateSelect = document.getElementById('templateDocument');
+            templateSelect.innerHTML = ''; // Clear existing options
+
+            templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = template.name;
+                templateSelect.appendChild(option);
+            });
+        }).getTemplateList();
+    }
+
     function populateSheets() {
       google.script.run.withSuccessHandler(function(sheets) {
         const sheetSelect = document.getElementById('sheetSelect');
@@ -282,6 +296,7 @@
             prebuiltTemplateSelect.style.display = 'block';
             driveFileInput.style.display = 'none';
             writeEmailInput.style.display = 'none';
+            populatePrebuiltTemplates(); // Populate the dropdown with Pre-built templates
         } else if (value === 'drive') {
             prebuiltTemplateSelect.style.display = 'none';
             driveFileInput.style.display = 'block';
@@ -332,12 +347,13 @@
         }).getTemplateContent(selectedTemplate);
         return; // Early return because getTemplateContent is async
       } else if (selectedOption === 'drive') {
+        const fileId = document.getElementById('driveFileSelect').value; // Get selected file ID
         google.script.run.withSuccessHandler(function(content) {
-          templateContent = content.emailContent;
-          emailSubject = content.emailSubject || 'No Subject';
+          templateContent = content;
+          emailSubject = document.getElementById('emailSubject').value || 'No Subject';
           showPreview(templateContent, emailSubject);
-        }).getRuntimeEmailContent();
-        return; // Early return because getRuntimeEmailContent is async
+        }).getDriveFileContent(fileId); // Fetch the correct file content based on selection
+        return; // Early return because getDriveFileContent is async
       }
 
       showPreview(templateContent, emailSubject);
