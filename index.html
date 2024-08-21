@@ -409,13 +409,46 @@ function handlePreview(templateContent, emailSubject, attachmentFile) {
       }).include('how_to_use');
     }
 
-    function loadSchedulePage() {
-      google.script.run.withSuccessHandler(function(html) {
-        document.open();
-        document.write(html);
-        document.close();
-      }).include('schedule');
-    }
+   function loadSchedulePage() {
+  const selectedOption = document.getElementById('templateOption').value;
+  let templateContent = '';
+  let emailSubject = document.getElementById('emailSubject').value || 'No Subject';
+
+  if (selectedOption === 'write') {
+    templateContent = quill.root.innerHTML;
+    google.script.run.withSuccessHandler(function() {
+      navigateToSchedulePage();
+    }).storeRuntimeEmailContent(emailSubject, templateContent);
+  } else if (selectedOption === 'prebuilt') {
+    const selectedTemplate = document.getElementById('templateDocument').value;
+    google.script.run.withSuccessHandler(function(template) {
+      templateContent = template.content;
+      emailSubject = template.subject;
+      google.script.run.withSuccessHandler(function() {
+        navigateToSchedulePage();
+      }).storeRuntimeEmailContent(emailSubject, templateContent);
+    }).getTemplateContent(selectedTemplate);
+  } else if (selectedOption === 'drive') {
+    const fileId = document.getElementById('driveFileSelect').value;
+    google.script.run.withSuccessHandler(function(content) {
+      templateContent = content;
+      google.script.run.withSuccessHandler(function() {
+        navigateToSchedulePage();
+      }).storeRuntimeEmailContent(emailSubject, templateContent);
+    }).getDriveFileContent(fileId);
+  } else {
+    navigateToSchedulePage(); // If no valid option is selected, just navigate to the schedule page
+  }
+}
+
+function navigateToSchedulePage() {
+  google.script.run.withSuccessHandler(function(html) {
+    document.open();
+    document.write(html);
+    document.close();
+  }).include('schedule');
+}
+
   </script>
 </body>
 </html>
