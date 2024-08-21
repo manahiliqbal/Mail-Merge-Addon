@@ -5,6 +5,7 @@ function onOpen() {
     .addToUi();
 }
 
+
 function openMailMerge() {
   var htmlOutput = HtmlService.createHtmlOutputFromFile('index')
     .setWidth(600)
@@ -12,19 +13,23 @@ function openMailMerge() {
   SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Mail Merge');
 }
 
+
 // Include HTML file for the UI
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+
 function getUserEmail() {
   return Session.getActiveUser().getEmail();
 }
+
 
 function getSheetList() {
   const sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   return sheets.map(sheet => ({ name: sheet.getName() }));
 }
+
 
 // Function to get data from the sheet with a hard-coded structure
 function getSheetData() {
@@ -47,6 +52,8 @@ function getSheetData() {
     otherInfo: row[3]   // Column D
   }));
 }
+
+
 // Function to list files in Google Drive
 function listDriveFiles() {
   var files = [];
@@ -61,6 +68,7 @@ function listDriveFiles() {
   return files;
 }
 
+
 // Function to get content from a selected Google Drive file
 function getDriveFileContent(fileId) {
   try {
@@ -73,6 +81,8 @@ function getDriveFileContent(fileId) {
       return null;
   }
 }
+
+
 function getTemplateList() {
   var templates = [
     { id: 'template1', name: 'Welcome Template', subject: 'Welcome to Our Service', content: 'Hello {{FirstName}} {{LastName}},<br>Greetings from our team!' },
@@ -93,11 +103,25 @@ function getTemplateList() {
   ];
   return templates;
 }
+
+
 function getTemplateContent(templateId) {
   var templates = getTemplateList();
   var selectedTemplate = templates.find(template => template.id === templateId);
   return selectedTemplate ? selectedTemplate : { subject: '', content: '' };
 }
+
+function storeEmailContent(subject, content) {
+  const userProperties = PropertiesService.getUserProperties();
+  if (subject) {
+    userProperties.setProperty('emailSubject', subject);
+  }
+  if (content) {
+    userProperties.setProperty('emailContent', content);
+  }
+}
+
+
 function getRuntimeEmailContent() {
   var userProperties = PropertiesService.getUserProperties();
   var emailSubject = userProperties.getProperty('emailSubject');
@@ -105,36 +129,66 @@ function getRuntimeEmailContent() {
   Logger.log('Retrieved email content: subject=%s, content=%s', emailSubject, emailContent);
   return { emailSubject: emailSubject, emailContent: emailContent };
 }
-// Function to get content of a selected template or Google Drive file
-function storeEmailContent(emailSubject, emailContent) {
-  var userProperties = PropertiesService.getUserProperties();
-  userProperties.setProperty('emailSubject', emailSubject);
-  userProperties.setProperty('emailContent', emailContent);
-}
+
 
 // Function to store email content at runtime
 function storeRuntimeEmailContent(emailSubject, emailContent, templateId, driveFileId) {
-  storeEmailContent(emailSubject, emailContent, templateId, driveFileId);
+  if (templateId) {
+    const template = getTemplateContent(templateId);
+    emailSubject = template.subject;
+    emailContent = template.content;
+  } else if (driveFileId) {
+    emailContent = getDriveFileContent(driveFileId);
+  }
+  // Store the latest email content and subject
+  storeEmailContent(emailSubject, emailContent);
 }
-// Function to schedule emails based on the sheet data, user input, and optional Google Drive file content
-function scheduleEmails(scheduledDate, scheduledTime, timezone, emailInterval, templateId, driveFileId) {
-  const sheetData = getSheetData();  // Get data from the sheet
 
-  // Store the selected template or Google Drive file content
-  storeRuntimeEmailContent(null, null, templateId, driveFileId); // Null for emailSubject and emailContent if using template or drive file
+
+
+function scheduleEmails(scheduledDate, scheduledTime, emailInterval) {
+  // Parse the scheduled date and time
+  const [year, month, day] = scheduledDate.split('-').map(Number);
+  const [hours, minutes] = scheduledTime.split(':').map(Number);
+
+  // Manually create the Date object with the correct local time (GMT+5)
+  const startTime = new Date(year, month - 1, day, hours, minutes);
+
   
-  // Calculate the initial time to send the first email
-  const startTime = new Date(`${scheduledDate} ${scheduledTime}`);
-
-  // Store the time and interval in user properties for the trigger to use
+  // Store the time and interval in UserProperties for the trigger to use
   storeEmailSchedule(startTime, emailInterval);
 
-  // Create a single trigger to run the 'sendEmailsInBatch' function at the specified time
+  // Create a time-based trigger to run 'sendEmailsInBatch' at the specified time
   ScriptApp.newTrigger('sendEmailsInBatch')
     .timeBased()
     .at(startTime)
     .create();
+  
 }
+
+
+
+// Helper function to store email schedule details
+function storeEmailSchedule(startTime, emailInterval) {
+  const userProperties = PropertiesService.getUserProperties();
+  userProperties.setProperty('startTime', startTime.toISOString());
+  userProperties.setProperty('emailInterval', emailInterval);
+}
+
+function getEmailSchedule() {
+  const userProperties = PropertiesService.getUserProperties();
+  const startTime = userProperties.getProperty('startTime');
+  const emailInterval = userProperties.getProperty('emailInterval');
+
+  if (startTime && emailInterval) {
+    Logger.log(`Stored Start Time: ${startTime}`);
+    Logger.log(`Stored Email Interval: ${emailInterval}`);
+  } else {
+    Logger.log('No email schedule found.');
+  }
+}
+
+
 // Function to send emails in a batch with intervals
 function sendEmailsInBatch() {
   const sheetData = getSheetData();
@@ -193,37 +247,41 @@ function sendEmailsInBatch() {
           mailOptions.attachments = [attachmentBlob];
         }
         MailApp.sendEmail(mailOptions);
-        Logger.log(`Email sent to: ${recipient.email}`);
+        Logger.log(`Email scheduled to: ${recipient.email}`);
       }
     } catch (error) {
       Logger.log(`Failed to send email to: ${recipient.email} with error: ${error.message}`);
     }
+    cleanupTriggers();
   });
 }
 
-// Store the schedule in user properties for use by the triggered function
-function storeEmailSchedule(startTime, emailInterval) {
-  var userProperties = PropertiesService.getUserProperties();
-  userProperties.setProperty('startTime', startTime.toISOString());
-  userProperties.setProperty('emailInterval', emailInterval);
-}
 
 function isValidEmail(email) {
+  const trimmedEmail = email.trim();
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailPattern.test(email);
+  return emailPattern.test(trimmedEmail);
 }
+
 
 function uploadAttachment(imageData, fileName) {
   if (!imageData || !imageData.includes(',')) {
     throw new Error("Invalid image data format.");
   }
-
   const imageBlob = Utilities.newBlob(Utilities.base64Decode(imageData.split(',')[1]), 'image/png', fileName);
-
   // Save the image in Google Drive
   const folder = DriveApp.getRootFolder(); // You can specify a different folder if needed
   const file = folder.createFile(imageBlob);
-
   // Return the file ID to generate the download URL
   return file.getId();
 }
+
+function cleanupTriggers() {
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'sendEmailsInBatch') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+}
+
